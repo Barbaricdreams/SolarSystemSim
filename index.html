@@ -407,48 +407,56 @@
   </style>
 </head>
 <body>
+  <noscript>
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;text-align:center;padding:2em;">
+      <div>
+        <h1>JavaScript Required</h1>
+        <p>This Solar System simulator requires JavaScript to run. Please enable it in your browser settings.</p>
+      </div>
+    </div>
+  </noscript>
   <div id="info-bar">Solar System &mdash; Drag to orbit &middot; Scroll to zoom</div>
 
   <div id="speed-control">
-    <button id="pause-play">⏸</button>
+    <button id="pause-play" aria-label="Pause simulation" aria-pressed="false">⏸</button>
     <label>Speed</label>
-    <input type="range" id="speed-slider" min="0" max="5" step="0.1" value="1" />
+    <input type="range" id="speed-slider" min="0" max="5" step="0.1" value="1" aria-label="Simulation speed" />
     <span id="speed-value">1.0×</span>
   </div>
 
-  <button id="star-toggle">Stars: ON</button>
-  <button id="label-toggle">Labels: ON</button>
-  <button id="orbit-toggle">Orbits: ON</button>
-  <button id="bright-toggle">Bright: OFF</button>
+  <button id="star-toggle" aria-pressed="true">Stars: ON</button>
+  <button id="label-toggle" aria-pressed="true">Labels: ON</button>
+  <button id="orbit-toggle" aria-pressed="true">Orbits: ON</button>
+  <button id="bright-toggle" aria-pressed="false">Bright: OFF</button>
 
-  <button id="menu-toggle">☰</button>
-  <div id="planet-menu">
+  <button id="menu-toggle" aria-label="Planet navigation menu" aria-expanded="false" aria-controls="planet-menu">☰</button>
+  <div id="planet-menu" role="menu">
     <div class="menu-header">NAVIGATE</div>
-    <button class="menu-item" data-planet="Sun">
+    <button class="menu-item" role="menuitem" data-planet="Sun">
       <span class="menu-dot" style="background:#ffcc33"></span>Sun
     </button>
-    <button class="menu-item" data-planet="Mercury">
+    <button class="menu-item" role="menuitem" data-planet="Mercury">
       <span class="menu-dot" style="background:#8c8c8c"></span>Mercury
     </button>
-    <button class="menu-item" data-planet="Venus">
+    <button class="menu-item" role="menuitem" data-planet="Venus">
       <span class="menu-dot" style="background:#e6c229"></span>Venus
     </button>
-    <button class="menu-item" data-planet="Earth">
+    <button class="menu-item" role="menuitem" data-planet="Earth">
       <span class="menu-dot" style="background:#6b93d6"></span>Earth
     </button>
-    <button class="menu-item" data-planet="Mars">
+    <button class="menu-item" role="menuitem" data-planet="Mars">
       <span class="menu-dot" style="background:#c1440e"></span>Mars
     </button>
-    <button class="menu-item" data-planet="Jupiter">
+    <button class="menu-item" role="menuitem" data-planet="Jupiter">
       <span class="menu-dot" style="background:#d4a574"></span>Jupiter
     </button>
-    <button class="menu-item" data-planet="Saturn">
+    <button class="menu-item" role="menuitem" data-planet="Saturn">
       <span class="menu-dot" style="background:#f4d59c"></span>Saturn
     </button>
-    <button class="menu-item" data-planet="Pluto">
+    <button class="menu-item" role="menuitem" data-planet="Pluto">
       <span class="menu-dot" style="background:#c9b1a0"></span>Pluto
     </button>
-    <button class="menu-item" data-planet="Moon">
+    <button class="menu-item" role="menuitem" data-planet="Moon">
       <span class="menu-dot" style="background:#aaaaaa"></span>Moon
     </button>
   </div>
@@ -456,7 +464,7 @@
   <div id="planet-overlay">
     <div id="overlay-backdrop"></div>
     <div id="planet-card">
-      <button id="card-close">&times;</button>
+      <button id="card-close" aria-label="Close planet info">&times;</button>
       <div class="card-planet-name" id="card-name">Earth</div>
       <div class="card-planet-tagline" id="card-tagline">Third Planet</div>
       <div class="card-divider" id="card-divider"></div>
@@ -492,6 +500,24 @@
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // WebGL check
+    {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      if (!gl) {
+        document.body.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;text-align:center;padding:2em;">
+            <div>
+              <h1>WebGL Required</h1>
+              <p>This Solar System simulator requires WebGL. Please enable it or use a compatible browser.</p>
+            </div>
+          </div>`;
+        throw new Error('WebGL not supported');
+      }
+    }
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     /* ============================================================
        PLANET DATA
@@ -678,6 +704,7 @@
     `;
 
     const sunFragmentShader = `
+      precision mediump float;
       uniform float uTime;
       varying vec2 vUv;
       varying vec3 vNormal;
@@ -947,6 +974,7 @@ const glowLayers = [
 
     // Mercury — Cratered gray rock
     const mercuryFragShader = `
+      precision mediump float;
       uniform float uTime;
       uniform float uBrightness;
       varying vec2 vUv;
@@ -972,6 +1000,7 @@ const glowLayers = [
 
     // Venus — Swirling yellow-white clouds
     const venusFragShader = `
+      precision mediump float;
       uniform float uTime;
       uniform float uBrightness;
       varying vec2 vUv;
@@ -996,6 +1025,7 @@ const glowLayers = [
 
     // Earth — Recognizable continents using polygon outlines in lon/lat space
     const earthFragShader = `
+      precision mediump float;
       uniform float uTime;
       uniform float uBrightness;
       varying vec2 vUv;
@@ -1164,6 +1194,7 @@ const glowLayers = [
 
     // Mars — Rust red with darker craters and polar caps
     const marsFragShader = `
+      precision mediump float;
       uniform float uTime;
       uniform float uBrightness;
       varying vec2 vUv;
@@ -1191,6 +1222,7 @@ const glowLayers = [
 
     // Jupiter — Banded gas giant with turbulence
     const jupiterFragShader = `
+      precision mediump float;
       uniform float uTime;
       uniform float uBrightness;
       varying vec2 vUv;
@@ -1220,6 +1252,7 @@ const glowLayers = [
 
     // Saturn — Golden bands, subtler than Jupiter
     const saturnFragShader = `
+      precision mediump float;
       uniform float uTime;
       uniform float uBrightness;
       varying vec2 vUv;
@@ -1247,6 +1280,7 @@ const glowLayers = [
 
     // Moon — Gray with craters
     const moonFragShader = `
+      precision mediump float;
       uniform float uTime;
       uniform float uBrightness;
       varying vec2 vUv;
@@ -1275,6 +1309,7 @@ const glowLayers = [
 
     // Pluto — Reddish-brown icy rock with lighter Tombaugh Regio-like patches
     const plutoFragShader = `
+      precision mediump float;
       uniform float uTime;
       uniform float uBrightness;
       varying vec2 vUv;
@@ -1311,6 +1346,10 @@ const glowLayers = [
       Pluto: plutoFragShader
     };
 
+    // Shared geometries (scaled per mesh)
+    const sharedPlanetGeo = new THREE.SphereGeometry(1, 48, 48);
+    const sharedMoonGeo = new THREE.SphereGeometry(1, 24, 24);
+
     PLANETS.forEach(p => {
       const dist = p.auDist * AU;
       let visRadius = 0.2 + p.radius * 0.55;
@@ -1332,7 +1371,6 @@ const glowLayers = [
       pivot.add(planetGroup);
 
       // Mesh — procedural shader material
-      const geo = new THREE.SphereGeometry(visRadius, 48, 48);
       const fragShader = planetShaders[p.name] || mercuryFragShader;
       const mat = new THREE.ShaderMaterial({
         uniforms: {
@@ -1342,7 +1380,8 @@ const glowLayers = [
         vertexShader: planetVertexShader,
         fragmentShader: fragShader
       });
-      const mesh = new THREE.Mesh(geo, mat);
+      const mesh = new THREE.Mesh(sharedPlanetGeo, mat);
+      mesh.scale.setScalar(visRadius);
       mesh.position.x = dist;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -1379,7 +1418,7 @@ const glowLayers = [
 
       // Earth's Moon
       if (p.name === 'Earth') {
-        const moonGeo = new THREE.SphereGeometry(0.1, 24, 24);
+        const moonGeo = sharedMoonGeo;
         const moonMat = new THREE.ShaderMaterial({
           uniforms: {
             uTime: { value: 0 },
@@ -1389,6 +1428,7 @@ const glowLayers = [
           fragmentShader: moonFragShader
         });
         moonMesh = new THREE.Mesh(moonGeo, moonMat);
+        moonMesh.scale.setScalar(0.1);
         moonMesh.userData = {
           planetName: 'Moon',
           tagline: "Earth's companion",
@@ -1460,6 +1500,7 @@ const glowLayers = [
 
       overlay.classList.add('active');
       selectedPlanet = mesh;
+      setTimeout(() => cardClose.focus(), 100);
 
       // --- Camera: fly to the planet ---
       const worldPos = new THREE.Vector3();
@@ -1509,6 +1550,7 @@ const glowLayers = [
       controls.target.set(0, 0, 0);
       controls.update();
       controls.enabled = true;
+      menuToggle.focus();
     }
 
     let pointerDownPos = null;
@@ -1575,6 +1617,7 @@ const glowLayers = [
     starToggle.addEventListener('click', () => {
       starfield.visible = !starfield.visible;
       starToggle.textContent = starfield.visible ? 'Stars: ON' : 'Stars: OFF';
+      starToggle.setAttribute('aria-pressed', starfield.visible);
     });
 
     /* ============================================================
@@ -1587,6 +1630,7 @@ const glowLayers = [
       labelsVisible = !labelsVisible;
       labelSprites.forEach(s => { s.visible = labelsVisible; });
       labelToggle.textContent = labelsVisible ? 'Labels: ON' : 'Labels: OFF';
+      labelToggle.setAttribute('aria-pressed', labelsVisible);
     });
 
     /* ============================================================
@@ -1599,6 +1643,7 @@ const glowLayers = [
       orbitsVisible = !orbitsVisible;
       orbitRings.forEach(r => { r.visible = orbitsVisible; });
       orbitToggle.textContent = orbitsVisible ? 'Orbits: ON' : 'Orbits: OFF';
+      orbitToggle.setAttribute('aria-pressed', orbitsVisible);
     });
 
     /* ============================================================
@@ -1612,6 +1657,7 @@ const glowLayers = [
       brightLight.intensity = brightOn ? 1.2 : 0;
       brightDirLight.intensity = brightOn ? 0.8 : 0;
       brightToggle.textContent = brightOn ? 'Bright: ON' : 'Bright: OFF';
+      brightToggle.setAttribute('aria-pressed', brightOn);
     });
 
     /* ============================================================
@@ -1626,6 +1672,17 @@ const glowLayers = [
       menuOpen = !menuOpen;
       planetMenu.style.display = menuOpen ? 'block' : 'none';
       menuToggle.textContent = menuOpen ? '✕' : '☰';
+      menuToggle.setAttribute('aria-expanded', menuOpen);
+    });
+
+    menuToggle.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menuOpen) {
+        menuOpen = false;
+        planetMenu.style.display = 'none';
+        menuToggle.textContent = '☰';
+        menuToggle.setAttribute('aria-expanded', 'false');
+        menuToggle.focus();
+      }
     });
 
     // Build a lookup map of name → mesh
@@ -1658,42 +1715,55 @@ const glowLayers = [
     pauseBtn.addEventListener('click', () => {
       isPaused = !isPaused;
       pauseBtn.textContent = isPaused ? '\u25B6' : '\u23F8';
+      pauseBtn.setAttribute('aria-pressed', isPaused);
+      pauseBtn.setAttribute('aria-label', isPaused ? 'Play simulation' : 'Pause simulation');
     });
 
     /* ============================================================
         ANIMATION LOOP
         ============================================================ */
     const clock = new THREE.Clock();
+    const orbitalAngles = PLANETS.map(() => Math.random() * Math.PI * 2);
+    let moonAngle = 0;
 
     function animate() {
       requestAnimationFrame(animate);
       const delta = clock.getDelta();
       const elapsed = clock.elapsedTime;
-      const time = elapsed * simSpeed;
 
       // Sun pulsing
       const sunTime = sunMat.uniforms.uTime;
       if (sunTime) sunTime.value = elapsed;
 
-      const pulse = 1 + Math.sin(elapsed * 2) * 0.02;
-      sunMesh.scale.setScalar(pulse);
+      if (!prefersReducedMotion) {
+        const pulse = 1 + Math.sin(elapsed * 2) * 0.02;
+        sunMesh.scale.setScalar(pulse);
 
-      // Glow breathing
-      glowMeshes.forEach((g, i) => {
-        const breathe = 1 + Math.sin(elapsed * (1.5 + i * 0.3)) * 0.04;
-        g.scale.setScalar(breathe);
-      });
+        // Glow breathing
+        glowMeshes.forEach((g, i) => {
+          const breathe = 1 + Math.sin(elapsed * (1.5 + i * 0.3)) * 0.04;
+          g.scale.setScalar(breathe);
+        });
 
-      // Flare breathing
-      if (flare1) flare1.material.opacity = 0.4 + Math.sin(elapsed * 1.8) * 0.1;
-      if (flare2) flare2.material.opacity = 0.3 + Math.sin(elapsed * 2.2) * 0.08;
-      if (flare3) flare3.material.opacity = 0.15 + Math.sin(elapsed * 1.2) * 0.05;
+        // Flare breathing
+        if (flare1) flare1.material.opacity = 0.4 + Math.sin(elapsed * 1.8) * 0.1;
+        if (flare2) flare2.material.opacity = 0.3 + Math.sin(elapsed * 2.2) * 0.08;
+        if (flare3) flare3.material.opacity = 0.15 + Math.sin(elapsed * 1.2) * 0.05;
 
-      coronaSprite.scale.set(
-        10 * (1 + Math.sin(elapsed * 1.5) * 0.08),
-        10 * (1 + Math.sin(elapsed * 1.5) * 0.08), 1
-      );
-      coronaMat.opacity = 0.6 + Math.sin(elapsed * 2.2) * 0.1;
+        coronaSprite.scale.set(
+          10 * (1 + Math.sin(elapsed * 1.5) * 0.08),
+          10 * (1 + Math.sin(elapsed * 1.5) * 0.08), 1
+        );
+        coronaMat.opacity = 0.6 + Math.sin(elapsed * 2.2) * 0.1;
+      } else {
+        sunMesh.scale.setScalar(1);
+        glowMeshes.forEach(g => g.scale.setScalar(1));
+        if (flare1) flare1.material.opacity = 0.4;
+        if (flare2) flare2.material.opacity = 0.3;
+        if (flare3) flare3.material.opacity = 0.15;
+        coronaSprite.scale.set(10, 10, 1);
+        coronaMat.opacity = 0.6;
+      }
 
       if (!isPaused) {
         // Orbital motion (parametric Kepler-like) + self-rotation
@@ -1707,7 +1777,8 @@ const glowLayers = [
           }
           const p = PLANETS[i];
           const orbitSpeed = (2 * Math.PI) / (p.period * 30);
-          const angle = orbitSpeed * time;
+          orbitalAngles[i] += orbitSpeed * delta * simSpeed;
+          const angle = orbitalAngles[i];
           const ecc = p.eccentricity || 0;
           const inc = (p.inclination || 0) * Math.PI / 180;
 
@@ -1729,8 +1800,9 @@ const glowLayers = [
 
         // Moon orbit
         if (moonMesh) {
-          moonMesh.position.x = Math.cos(elapsed * 2.5) * 1.2;
-          moonMesh.position.z = Math.sin(elapsed * 2.5) * 1.2;
+          moonAngle += 2.5 * delta * simSpeed;
+          moonMesh.position.x = Math.cos(moonAngle) * 1.2;
+          moonMesh.position.z = Math.sin(moonAngle) * 1.2;
           // Update Moon procedural shader
           if (moonMesh.material.uniforms && moonMesh.material.uniforms.uTime) {
             moonMesh.material.uniforms.uTime.value = elapsed;
@@ -1781,17 +1853,31 @@ const glowLayers = [
     /* ============================================================
        RESIZE
        ============================================================ */
+    let resizeTimer;
     window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }, 120);
     });
 
     /* ============================================================
        KEYBOARD
        ============================================================ */
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeCard();
+      if (e.key === 'Escape') {
+        if (overlay.classList.contains('active')) {
+          closeCard();
+        } else if (menuOpen) {
+          menuOpen = false;
+          planetMenu.style.display = 'none';
+          menuToggle.textContent = '☰';
+          menuToggle.setAttribute('aria-expanded', 'false');
+          menuToggle.focus();
+        }
+      }
     });
 
   </script>
