@@ -1535,7 +1535,8 @@ const glowLayers = [
       const dragged = Math.sqrt(dx * dx + dy * dy) > 5;
       pointerDownPos = null;
 
-      // Only close card on clean click (no drag) on empty space
+      // Don't close card while tracking — only backdrop, close button, or Escape close it
+      if (cameraAnim.tracking) return;
       if (dragged) return;
       if (event.target.closest('#planet-card') || event.target.closest('#speed-control')) return;
 
