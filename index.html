@@ -575,7 +575,7 @@
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
-    controls.minDistance = 6;
+    controls.minDistance = 2;
     controls.maxDistance = 600;
     controls.maxPolarAngle = Math.PI * 0.85;
     controls.target.set(0, 0, 0);
@@ -589,9 +589,7 @@
       endTarget: new THREE.Vector3(),
       progress: 0,
       duration: 1.2, // seconds
-      tracking: false,        // continuously follow selected planet
-      trackingOffset: new THREE.Vector3(), // camera-to-planet offset, set when fly ends
-      trackingZoom: 1.0       // zoom multiplier while tracking (scroll adjusts this)
+      tracking: false         // continuously follow selected planet
     };
 
     /* ============================================================
@@ -1506,21 +1504,10 @@ const glowLayers = [
       selectedPlanet = null;
       cameraAnim.active = false;
       cameraAnim.tracking = false;
-      cameraAnim.trackingZoom = 1.0;
-      // Re-enable OrbitControls from the current camera position
+      controls.target.set(0, 0, 0);
       controls.update();
       controls.enabled = true;
     }
-
-    // Zoom while tracking — scroll wheel adjusts tracking distance
-    // Use capture phase on document to run before OrbitControls intercepts
-    document.addEventListener('wheel', (e) => {
-      if (!cameraAnim.tracking || !selectedPlanet) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const delta = e.deltaY > 0 ? 1.08 : 0.92;
-      cameraAnim.trackingZoom = Math.max(0.2, Math.min(5.0, cameraAnim.trackingZoom * delta));
-    }, { passive: false, capture: true });
 
     function onPointerDown(event) {
       if (event.target.closest('#planet-card') || event.target.closest('#speed-control')) return;
@@ -1737,7 +1724,8 @@ const glowLayers = [
           if (selectedPlanet) {
             const wp = new THREE.Vector3();
             selectedPlanet.getWorldPosition(wp);
-            cameraAnim.trackingOffset.copy(camera.position).sub(wp);
+            controls.target.copy(wp);
+            controls.enabled = true;
             cameraAnim.tracking = true;
           }
         }
@@ -1748,15 +1736,10 @@ const glowLayers = [
         controls.target.lerpVectors(cameraAnim.startTarget, cameraAnim.endTarget, t);
       }
 
-      // Continuous tracking — follow the selected planet each frame with smooth lerp
+      // Continuous tracking — follow the selected planet each frame
       if (cameraAnim.tracking && selectedPlanet) {
         const wp = new THREE.Vector3();
         selectedPlanet.getWorldPosition(wp);
-        // Apply zoom multiplier to the offset distance
-        const zoomedOffset = cameraAnim.trackingOffset.clone().multiplyScalar(cameraAnim.trackingZoom);
-        const targetPos = wp.clone().add(zoomedOffset);
-        // Smooth follow — 0.08 = gentle lag, eliminates snap
-        camera.position.lerp(targetPos, 0.08);
         controls.target.lerp(wp, 0.08);
       } else if (cameraAnim.tracking) {
         cameraAnim.tracking = false;
