@@ -768,6 +768,7 @@
       auDist: 0,
       period: 0,
       radius: 109.2,
+      visRadius: 1.8,
       color: '#ffcc33',
       fact: 'The Sun contains <strong>99.86% of all mass</strong> in the Solar System. Every second, it converts about 4 million tonnes of matter into energy through nuclear fusion, producing the light and heat that sustains life on Earth.'
     };
@@ -1394,6 +1395,7 @@ const glowLayers = [
           auDist: 0,
           period: 0,
           radius: 0.273,
+          visRadius: 0.1,
           color: '#aaaaaa',
           fact: 'The Moon is <strong>the only other world humans have set foot on</strong>. It is slowly drifting away from Earth at about 3.8 cm per year, and it always shows the same face to us because its rotation is tidally locked.'
         };
@@ -1509,8 +1511,12 @@ const glowLayers = [
       controls.enabled = true;
     }
 
+    let pointerDownPos = null;
+
     function onPointerDown(event) {
       if (event.target.closest('#planet-card') || event.target.closest('#speed-control')) return;
+
+      pointerDownPos = { x: event.clientX, y: event.clientY };
 
       pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
       pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -1519,7 +1525,26 @@ const glowLayers = [
 
       if (hits.length > 0) {
         openCard(hits[0].object, event);
-      } else if (overlay.classList.contains('active')) {
+      }
+    }
+
+    function onPointerUp(event) {
+      if (!pointerDownPos) return;
+      const dx = event.clientX - pointerDownPos.x;
+      const dy = event.clientY - pointerDownPos.y;
+      const dragged = Math.sqrt(dx * dx + dy * dy) > 5;
+      pointerDownPos = null;
+
+      // Only close card on clean click (no drag) on empty space
+      if (dragged) return;
+      if (event.target.closest('#planet-card') || event.target.closest('#speed-control')) return;
+
+      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(raycasterTargets, false);
+
+      if (hits.length === 0 && overlay.classList.contains('active')) {
         closeCard();
       }
     }
@@ -1527,6 +1552,7 @@ const glowLayers = [
     backdrop.addEventListener('pointerdown', closeCard);
     cardClose.addEventListener('pointerdown', (e) => { e.stopPropagation(); closeCard(); });
     renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    renderer.domElement.addEventListener('pointerup', onPointerUp);
 
     /* ============================================================
        SPEED CONTROL
